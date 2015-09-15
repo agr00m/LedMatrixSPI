@@ -1,0 +1,30 @@
+#####################################
+# Syntax Coloring Map For LedMatrix #
+#####################################
+
+#####################################
+# Datatypes (KEYWORD1)              #
+#####################################
+
+LedMatrixSPI	KEYWORD1
+
+#####################################
+# Methods and Functions (KEYWORD2)  #
+#####################################
+
+intensity	KEYWORD2
+shutdown		KEYWORD2
+setFont		KEYWORD2
+setLed		KEYWORD2
+update		KEYWORD2
+clear			KEYWORD2
+clearScreen	KEYWORD2
+scrollDelay	KEYWORD2
+drawChar		KEYWORD2
+scrollChar	KEYWORD2
+line			KEYWORD2
+triangle		KEYWORD2
+quad			KEYWORD2
+rect			KEYWORD2
+circle		KEYWORD2
+ellipse		KEYWORD2
