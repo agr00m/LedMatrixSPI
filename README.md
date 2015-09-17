@@ -4,11 +4,12 @@ LedMatrixSPI is an [Arduino](http://arduino.cc) library for controlling multiple
 
 Documentation
 -------------
-
+https://github.com/agr00m/LedMatrixSPI/wiki
+Also included in the library folder.
 
 Download
 --------
-
+https://github.com/agr00m/LedMatrixSPI
 
 Install
 -------
