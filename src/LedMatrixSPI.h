@@ -42,9 +42,9 @@ SOFTWARE.
 #define FONT8x8         8
 #define RAD             0.0174532925
 
-#define SPI_CS          2                 // Digital pin 10
-#define SPI_MOSI        3                 // Digital pin 11
-#define SPI_CLK         5                 // Digital pin 13
+#define SPI_CS          2           // Digital pin 10
+#define SPI_MOSI        3           // Digital pin 11
+#define SPI_CLK         5           // Digital pin 13
 
 /*
    The maximum number of devices can be modified to suit individual needs.
@@ -53,7 +53,7 @@ SOFTWARE.
    however, the ATmega328 only has 2k of dynamic memory so only about 190
    can be used before running out of memory.
 */
-#define MAX_DEVICES     32
+#define MAX_DEVICES     50
 
 class LedMatrixSPI {
 
@@ -113,12 +113,20 @@ class LedMatrixSPI {
 		void scrollDelay(uint8_t val);
       
       /* 
-       * Draws a single character.
+       * Prints a single character.
        * @param   c           Character to draw
        * @param   x           X coordinate of the top left corner
        * @param   y           Y coordinate of the top left corner
        */
-      void drawChar(char c, uint8_t x, uint8_t y);
+      void printChar(char c, uint8_t x, uint8_t y);
+      
+      /* 
+       * Prints a word or string of characters.
+       * @param   c           Character to draw
+       * @param   x           X coordinate of the top left corner
+       * @param   y           Y coordinate of the top left corner
+       */
+      void printWord(const char str[], uint8_t strSize, uint8_t x, uint8_t y);
       
       /* 
        * Scrolls a single character onto the matrix from the right to left

@@ -78,7 +78,7 @@ void LedMatrixSPI::setLed(uint8_t x, uint8_t y, bool val) {
    }
    uint8_t dispRow = y / 8;   // floor(y/8)
    uint8_t dispCol = x / 8;   // floor(x/8)
-   uint8_t index = 8*(dispCol+dispRow*(DISP_COLS-1))+y;   // Calculate index
+   uint16_t index = 8*(dispCol+dispRow*(DISP_COLS-1))+y;   // Calculate index
    if(val) {
       SETBIT(pixels[index], x%8);
    } else {
@@ -87,7 +87,7 @@ void LedMatrixSPI::setLed(uint8_t x, uint8_t y, bool val) {
 }
 
 void LedMatrixSPI::clear(void) {
-   for (uint8_t i = 0; i < NUM_DEVICES*8; i++) {
+   for (uint16_t i = 0; i < NUM_DEVICES*8; i++) {
       pixels[i] = 0x00;
    }
 }
@@ -101,40 +101,50 @@ void LedMatrixSPI::scrollDelay(uint8_t val) {
 	sDelay = val;
 }
 
-void LedMatrixSPI::drawChar(char c, uint8_t x, uint8_t y) {
+void LedMatrixSPI::printChar(char c, uint8_t x, uint8_t y) {
    int8_t fHeight, rows, offset; 
    bufferChar(c);
-   for (uint8_t col = 0; col < font; col++) { 
-      if (x+col >= 0 && x+col < NUM_COLS) {
-         if (font == FONT5x7) {
-            rows = 7;
-            offset = 1;
-         } else if (font == FONT8x8) {
-            rows = 8;
-            offset = 0;
-         }
-         for (uint8_t row = 0; row < rows; row++) {
-            if (y+row >= 0 && y+row < NUM_ROWS) {
-               setLed(x+col, y+row, CHECKBIT(charBuffer[col], 7-row-offset));
-            }
-         }
-      }
+   for (uint8_t col = 0; col < font; col++) {
+		if (font == FONT5x7) {
+			rows = 7;
+			offset = 1;
+		} else if (font == FONT8x8) {
+			rows = 8;
+			offset = 0;
+		}
+		for (uint8_t row = 0; row < rows; row++) {
+			setLed(x+col, y+row, CHECKBIT(charBuffer[col], 7-row-offset));
+		}
+   }
+}
+
+void LedMatrixSPI::printWord(const char str[], uint8_t strSize, uint8_t x, uint8_t y){
+   for (uint8_t i = 0; i < strSize; i++) {
+      printChar(str[i], x+(i*8), y);
    }
 }
 
 void LedMatrixSPI::scrollChar(uint8_t c, uint8_t dispRow) {
+
    if (dispRow >= DISP_ROWS) {
       return;
    }
-   uint8_t offset = 8*(DISP_COLS*(dispRow+1)-1), row = 0; 
+	
+   uint16_t offset = 8 * (DISP_COLS * (dispRow + 1) - 1);
+	uint8_t row = 0; 
+	
    bufferChar(c);
+	
    for (uint8_t col = 0; col < font; col++) {
+	
       shiftLeft(dispRow);
+		
       if (font == FONT5x7) {
          row = 1;
       } else if (font == FONT8x8) {
          row = 0;
       }
+		
       for (row; row < 8; row++) {
          if (CHECKBIT(charBuffer[col], 7-row)) {
             SETBIT(pixels[offset+row], 7);
@@ -145,6 +155,7 @@ void LedMatrixSPI::scrollChar(uint8_t c, uint8_t dispRow) {
       }
       update();
    }
+	
    // If 5x7 font, shift one more to add a space between characters.
    if (font == FONT5x7) {
       shiftLeft(dispRow);
@@ -153,12 +164,11 @@ void LedMatrixSPI::scrollChar(uint8_t c, uint8_t dispRow) {
 }
 
 void LedMatrixSPI::shiftLeft(uint8_t dispRow) {
-	uint8_t offset = dispRow * DISP_COLS * 8, i;
+	uint16_t offset = dispRow * DISP_COLS * 8, i;
    for (byte dispCol = 0; dispCol < DISP_COLS; dispCol++) {
       for (byte row = 0; row < 8; row++) {
          i = (dispCol*8)+offset+row;
-         // If the MSB is 1, set the LSB of the prev index
-         // before shifting.
+         // If the MSB is 1, set the LSB of the prev index to 1 before shifting.
          if (dispCol > 0 && CHECKBIT(pixels[i],0)) {
             SETBIT(pixels[i-8], 7);
          }
@@ -168,6 +178,10 @@ void LedMatrixSPI::shiftLeft(uint8_t dispRow) {
    delay(sDelay);
 }
 
+/* 
+ * Found this method online that uses all integer math. Can't say I understand it well,
+ * but it seems to work fine. 
+ */
 void LedMatrixSPI::line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
    if (x1 >= NUM_COLS || x2 >= NUM_COLS || y1 >= NUM_ROWS || y2 >= NUM_ROWS) {
       return;
@@ -224,7 +238,11 @@ void LedMatrixSPI::quad(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t 
    line(x3, y3, x4, y4);
    line(x4, y4, x1, y1);
 }
-
+/*
+ * Alternately you could call the line() function 4 times; however, I preferred 
+ * this method since it allows the user to enter a starting X,Y coordinate 
+ * that is on the grid, yet still draw the rectangle even if part(s) of it is not.
+ */
 void LedMatrixSPI::rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
    if (x >= NUM_COLS || y >= NUM_ROWS) {
       return;
@@ -256,11 +274,17 @@ void LedMatrixSPI::circle(uint8_t h, uint8_t k, uint8_t radius) {
    ellipse(h, k, diameter, diameter);
 }
 
+/*
+ * Definitely an inefficient method of drawing this since I'm plotting points for
+ * both the range of X and Y values. Would welcome more efficient methods of doing
+ * this.
+ */
 void LedMatrixSPI::ellipse(uint8_t h, uint8_t k, uint8_t a, uint8_t b) {
    if (h >= NUM_COLS || k >= NUM_ROWS) {
       return;
    }
    uint8_t xPos, yPos;
+   // Plot all Y values for range of X values
    for (uint8_t x = h - a/2; x <= h + a/2; x++) {
       if (x >= 0 && x < NUM_COLS) {
          yPos = (uint8_t)round(k + sqrt(pow(b/2,2)*(1-pow(x-h,2)/pow(a/2,2))));
@@ -273,6 +297,7 @@ void LedMatrixSPI::ellipse(uint8_t h, uint8_t k, uint8_t a, uint8_t b) {
          }
       }
    }
+   // Plot all X values for range of Y values
    for (uint8_t y = k - b/2; y <= k + b/2; y++) { 
       if (y >= 0 && y < NUM_ROWS) {
          xPos = (uint8_t)round(h + sqrt(pow(a/2,2)*(1-pow(y-k,2)/pow(b/2,2))));
@@ -307,26 +332,26 @@ void LedMatrixSPI::setOPCode(volatile uint8_t opcode, volatile uint8_t val) {
 
 void LedMatrixSPI::update(void) {
    uint8_t i, opcode;
-   for (i = 0; i < SPI_BYTES; i++) {
+   for (i = 0; i < SPI_BYTES; i++) {               // Clear previous data
       spiData[i] = 0x00;
    }
-   for (uint8_t row = 0; row < 8; row++) {  
-      i = 0;
-      opcode = 8 - row;    
-      for (uint8_t device = 0; device < NUM_DEVICES; device++) {
-         spiData[i++] = pixels[device*8+row];
-         spiData[i++] = opcode; 
+   for (uint8_t row = 0; row < 8; row++) {         // For each row of LEDs
+      i = 0;                                       // Reset index counter
+      opcode = 8 - row;                            // Row 0 = opcode 8, row 1 = opcode 7, etc.
+      for (uint8_t device = 0; device < NUM_DEVICES; device++) {  // For each 8x8 display
+         spiData[i++] = pixels[device*8+row];                     // Set LED status
+         spiData[i++] = opcode;                                   // Set operation code
       }
-      spiWrite();
+      spiWrite();                                                 // Write the data
    } 
 }
 
 void LedMatrixSPI::spiWrite(void) {
-   CLEARBIT(PORTB, SPI_CS);            // Load serial data
+   CLEARBIT(PORTB, SPI_CS);            // Load/CS pin LOW to write serial data
    for (int8_t i = SPI_BYTES - 1; i >= 0; i--) {
-      SPDR = spiData[i];               // Write SPI byte
+      SPDR = spiData[i];               // Write one byte to SPI 
       while(!(SPSR & (1<<SPIF) ));     // Wait for transfer
    }
-   SETBIT(PORTB, SPI_CS);              // Latch serial data
+   SETBIT(PORTB, SPI_CS);              // Load/CS pin HIGH to Latch serial data
 }
 
