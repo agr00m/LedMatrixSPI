@@ -107,8 +107,8 @@ void altScrollText(){
       for (int i = 0; i < sizeof(text)-1; i++) {   // Now draw each character in the string
          
          /* 
-          drawChar() takes 3 parameters:
-           - Character to draw
+          printChar() takes 3 parameters:
+           - Character to print
            - X position (left)
            - Y position (top)
           The y position will always stay the same (unless you want to try something funky)
@@ -116,7 +116,7 @@ void altScrollText(){
           position from the outer for loop plus the font width multiplied 
           by its location in the text array. 
          */
-         lm.drawChar(text[i], x + (FONT8x8 * i), 0);
+         lm.printChar(text[i], x + (FONT8x8 * i), 0);
       }
       lm.update();      // update() must be called to redraw the display
       delay(2);         // This sets the scroll speed
@@ -132,7 +132,7 @@ void altScrollText(){
    for (int x = NUM_COLS * 8; x >= -sizeof(text)*(FONT5x7 + 1); x--) {  
       lm.clear();
       for (int i = 0; i < sizeof(text)-1; i++) {
-         lm.drawChar(text[i], x + ((FONT5x7 + 1) * i), 8);
+         lm.printChar(text[i], x + ((FONT5x7 + 1) * i), 8);
       }
       lm.update();
       delay(2);
